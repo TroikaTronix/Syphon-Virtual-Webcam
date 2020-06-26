@@ -1,0 +1,20 @@
+/* Localized versions of Info.plist keys */
+"OK_BUTTON" = "OK";
+"CANCEL_BUTTON" = "Cancel";
+"DOWNLOAD_BUTTON" = "Download";
+"CONTINUE_BUTTON" = "Continue";
+"QUIT_BUTTON" = "Quit";
+"GO_TO_DOWNLOADS_BUTTON" = "Go to Downloads Page";
+
+/* DOWNLOAD ALERT #1 */
+"DOWNLOAD_ALERT_1_MESSAGE" = "To use Syphon Virtual Webcam, you must first install OBS Virtual Webcam for MacOS.";
+"DOWNLOAD_ALERT_1_INFO_FMT" = "Click the 'Download' button to download v%@ of the plugin using your browser.";
+"DOWNLOAD_ALERT_1_INFO_NO_VERSION" = "We were unable to automatically determine the latest version. Please locate the latest version on the downloads page and download it using your browser.";
+
+/* DOWNLOAD ALERT #2 */
+"DOWNLOAD_ALERT_2_MESSAGE_FMT" = "Once the download is complete, click continue to run the installer %@.";
+"DOWNLOAD_ALERT_2_MESSAGE_NO_VERISON" = "Double click the file you just downloaded to install install OBS Virtual Webcam.";
+
+/* DOWNLOAD ALERT #3 */
+"DOWNLOAD_ALERT_3_MESSAGE" = "Installation of OBS Virtual Webcam is complete. Quit and restart Syphon Virtual Webcam.";
+"DOWNLOAD_ALERT_3_INFO" = "(You only need to do this process the first time you run Syphon Virtual Webcam.)";
