@@ -109,7 +109,7 @@ void main() {\
 	#if 0
 	_timer = [NSTimer scheduledTimerWithTimeInterval:1.0/30.0 repeats:YES block:^(NSTimer *timer) {
 		NSTimeInterval secs = [[NSDate dateWithTimeIntervalSinceNow:0.0] timeIntervalSinceDate:self->_timerStart];
-		double min = 1.5;
+		double min = 3.0;
 		double max = min + 0.5;
 		if (secs < min) {
 			self->_splashIntensity = 1.0;
