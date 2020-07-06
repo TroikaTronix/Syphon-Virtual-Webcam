@@ -4,6 +4,10 @@ This free app, created for you by [TroikaTronix/Isadora](https://troikatronix.co
 
 Syphon Virtual Camera will guide you through the process of downloading and installing the OBS Virtual Camera driver. You can download and install the latest version at any time by choosing **Help > Install OBS Virtual Webcam** from the main menu. 
 
+# Download
+
+The latest version of Syphon Virtual Camera is available via the [Plugins section](https://troikatronix.com/plugin/syphon-virtual-webcam/) of the TroikaTronix website.
+
 # Compatibility
 
 The applications that work with with OBS Virtual Camera depend on the version of macOS you are using and the application itself. Jump to the the [OBS Virtual Camera Compatibility](https://github.com/johnboiles/obs-mac-virtualcam/wiki/Compatibility) listing for the most recent list of compatible (and incompatible) applications.
@@ -28,4 +32,4 @@ The Syphon image on the GPU must be pulled back into the CPU as an ARGB bitmap. 
 
 # Questions?
 
-You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com).
+You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).
