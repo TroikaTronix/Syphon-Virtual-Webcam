@@ -6,7 +6,7 @@ Syphon Virtual Camera will guide you through the process of downloading and inst
 
 # Download
 
-The latest version of Syphon Virtual Camera is available via the [Plugins section](https://troikatronix.com/plugin/syphon-virtual-webcam/) of the TroikaTronix website.
+The latest version of Syphon Virtual Webcam can always be found in the [plugins section](https://troikatronix.com/plugin/syphon-virtual-webcam/) of the TroikaTronix website.
 
 # Compatibility
 
