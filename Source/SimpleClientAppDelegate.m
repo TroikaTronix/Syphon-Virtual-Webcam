@@ -109,9 +109,12 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 - (void)resizeWindowForCurrentVideo;
 @end
 
-@implementation SimpleClientAppDelegate {
+@implementation SimpleClientAppDelegate
+{
     SyphonClient*	syClient;
     VirtCamServer*	virtCamServer;
+	NSTimer*		renderTimer;
+	NSLock*			renderLock;
 	
     CGLContextObj fboContext;
     GLuint fbo;
@@ -165,7 +168,18 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	
 	// set all of the initial values
 	[[NSUserDefaultsController sharedUserDefaultsController] setInitialValues:defaults];
-	
+}
+
+// ----------------------------------------------------------------------
+// init
+// ----------------------------------------------------------------------
+
+-(id)init
+{
+	if (self = [super init]) {
+    	renderLock = [[NSLock alloc] init];
+    }
+    return self;
 }
 
 // ----------------------------------------------------------------------
@@ -174,17 +188,30 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 
 -(void)dealloc
 {
+	[renderLock lock];
+	
 	[self DisposeFBO];
 	
 	if (virtCamServer != NULL) {
 		[virtCamServer stopVirtCamServer];
 		virtCamServer = NULL;
 	}
+	
 	if (vtPixelTransferSessionRef != NULL) {
 		VTPixelTransferSessionInvalidate(vtPixelTransferSessionRef);
 		CFRelease(vtPixelTransferSessionRef);
 		vtPixelTransferSessionRef = NULL;
 	}
+	
+	if (renderTimer != NULL) {
+		[renderTimer invalidate];
+		renderTimer = NULL;
+	}
+	
+	[renderLock unlock];
+	// [renderLock release];
+	renderLock = NULL;
+	
 }
 
 // ----------------------------------------------------------------------
@@ -286,15 +313,27 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 // CreateFBO
 // ----------------------------------------------------------------------
 
-- (void) CreateFBO:(SyphonClient*)inClient horz:(GLuint)inHorz vert:(GLuint)inVert
+- (void) CreateFBO:(CGLContextObj)inClientContext horz:(GLuint)inHorz vert:(GLuint)inVert
 {
-	if ([inClient context] != fboContext || fbo == 0 || (inHorz != fboWidth || inVert != fboHeight)) {
+	// round up to next highest multiple of four
+	if (inHorz % 4 != 0) {
+		inHorz = (inHorz + 3) & ~0x03;
+	}
+	
+	if (inClientContext != fboContext || fbo == 0 || (inHorz != fboWidth || inVert != fboHeight)) {
 	
 		[self DisposeFBO];
 		
-		fboContext = [inClient context];
-		CGLContextObj saveCtx =  [self pushContex:fboContext];
-		CGLRetainContext(fboContext);
+		if (inClientContext != fboContext) {
+			CGLContextObj oldContext = fboContext;
+			fboContext = inClientContext;
+			CGLRetainContext(fboContext);
+			if (oldContext != NULL) {
+				CGLReleaseContext(oldContext);
+			}
+		}
+
+		CGLContextObj saveCtx = [self pushContex:fboContext];
 
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -319,11 +358,11 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 		fboWidth = inHorz;
 		fboHeight = inVert;
 		
-		fboRGBBufferRowBytes = (GLuint) roundUpToMacroblockMultiple(fboWidth * 4);
+		fboRGBBufferRowBytes = (GLuint) fboWidth * 4;
 		fboRGBBufferSize = fboRGBBufferRowBytes * fboHeight;
 		fboRGBBuffer = malloc(fboRGBBufferSize);
 
-		fboYUVBufferRowBytes = (GLuint) roundUpToMacroblockMultiple(fboWidth * 2);
+		fboYUVBufferRowBytes = (GLuint) fboWidth * 2;
 		fboYUVBufferSize = fboYUVBufferRowBytes * fboHeight;
 		fboYUVBuffer = malloc(fboYUVBufferSize);
 
@@ -461,6 +500,7 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
                 // to do this on the main thread.
                 
                 [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+                
                     // First we track our framerate...
                     self->fpsCount++;
                     float elapsed = [NSDate timeIntervalSinceReferenceDate] - self->fpsStart;
@@ -496,60 +536,10 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 
                     [self.view setNeedsDisplay:YES];
 				
-					if (self->virtCamServer != NULL) {
-						[self CreateFBO:client horz:(GLuint)self.frameWidth vert:(GLuint)self.frameHeight];
-						if (self->fboRGBBuffer != NULL && self->fboRGBBufferSize > 0 && self->fboYUVBuffer != NULL && self->fboYUVBufferSize > 0) {
-							
-   							CVReturn cvErr = kCVReturnSuccess;
-							
-							// IOSurfaceRef ioSurface = [self->syClient getIOSurface];
- 							// CVPixelBufferRef pixelBuffer;
-    						// cvErr = CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, ioSurface, CreateSurfacePixelBufferCreationOptions(ioSurface), &pixelBuffer);
-
-							CGLContextObj saveCtx = [self pushContex:self->fboContext];
-							[self.view prepareOpenGL];
-							[self.view RenderCurrentImageIntoFBO:self->fbo pixelData:self->fboRGBBuffer pixelDataSize:self->fboRGBBufferSize pixelDataRowBytes:self->fboRGBBufferRowBytes];
-							[self popContext:saveCtx];
-							
-							CVPixelBufferRef srcpb = NULL;
-							CVPixelBufferRef dstpb = NULL;
-							
-							if (cvErr == kCVReturnSuccess) {
-								cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_32BGRA, self->fboRGBBuffer, self->fboRGBBufferRowBytes, NULL, NULL, NULL, &srcpb);
-							}
-							if (cvErr == kCVReturnSuccess) {
-								cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_422YpCbCr8, self->fboYUVBuffer, self->fboYUVBufferRowBytes, NULL, NULL, NULL, &dstpb);
-							}
-							
-							if (cvErr == kCVReturnSuccess && srcpb != NULL && dstpb != NULL) {
-							
-								if (self->vtPixelTransferSessionRef == NULL) {
-									cvErr = VTPixelTransferSessionCreate(kCFAllocatorDefault, &self->vtPixelTransferSessionRef);
-								}
-								if (self->vtPixelTransferSessionRef != NULL) {
-									cvErr = VTPixelTransferSessionTransferImage(self->vtPixelTransferSessionRef, srcpb, dstpb);
-								}
-							}
-							
-							if (srcpb != NULL) {
-								CVPixelBufferRelease(srcpb);
-								srcpb = NULL;
-							}
-							if (dstpb != NULL) {
-								CVPixelBufferRelease(dstpb);
-								dstpb = NULL;
-							}
-
-							[self->virtCamServer sendFrameWithSize:self->fboYUVBuffer
-								size:imageSize
-								#if VIRTCAM_ROW_BYTES
-								rowbytes:self->fboYUVBufferRowBytes
-								#endif
-								timestamp:mach_absolute_time()
-								fpsNumerator:30000
-								fpsDenominator:1000];
-						}
-					}
+					#if DEBUG
+					NSLog(@"Render From Server!");
+					#endif
+					[self renderToVirtualCameraServer];
 					
                 }];
             }];
@@ -573,6 +563,108 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
             }
         }
     }
+}
+
+// ----------------------------------------------------------------------
+// renderToVirtualCameraServerFromTimer
+// ----------------------------------------------------------------------
+
+- (void)renderToVirtualCameraServerFromTimer:(NSTimer*)timer
+{
+	#if DEBUG
+	NSLog(@"############# Render With Timer ############# ");
+	#endif
+	
+	[self renderToVirtualCameraServer];
+}
+
+// ----------------------------------------------------------------------
+// renderToVirtualCameraServer
+// ----------------------------------------------------------------------
+
+- (void)renderToVirtualCameraServer
+{
+	[renderLock lock];
+	
+	if (self->virtCamServer != NULL) {
+	
+		if (renderTimer != NULL) {
+			[renderTimer invalidate];
+			renderTimer = NULL;
+		}
+		
+		[self CreateFBO:[syClient context] horz:(GLuint)self.frameWidth vert:(GLuint)self.frameHeight];
+		
+		if (self->fboRGBBuffer != NULL && self->fboRGBBufferSize > 0 && self->fboYUVBuffer != NULL && self->fboYUVBufferSize > 0) {
+			
+			CVReturn cvErr = kCVReturnSuccess;
+			
+			// IOSurfaceRef ioSurface = [self->syClient getIOSurface];
+			// CVPixelBufferRef pixelBuffer;
+			// cvErr = CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, ioSurface, CreateSurfacePixelBufferCreationOptions(ioSurface), &pixelBuffer);
+
+			CGLContextObj saveCtx = [self pushContex:self->fboContext];
+			[self.view prepareOpenGL];
+			[self.view RenderCurrentImageIntoFBO:self->fbo fboWidth:self->fboWidth fboHeight:self->fboHeight pixelData:self->fboRGBBuffer pixelDataSize:self->fboRGBBufferSize pixelDataRowBytes:self->fboRGBBufferRowBytes];
+			[self popContext:saveCtx];
+			
+			CVPixelBufferRef srcpb = NULL;
+			CVPixelBufferRef dstpb = NULL;
+			
+			if (cvErr == kCVReturnSuccess) {
+				cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_32BGRA, self->fboRGBBuffer, self->fboRGBBufferRowBytes, NULL, NULL, NULL, &srcpb);
+			}
+			if (cvErr == kCVReturnSuccess) {
+				cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_422YpCbCr8, self->fboYUVBuffer, self->fboYUVBufferRowBytes, NULL, NULL, NULL, &dstpb);
+			}
+			
+			if (cvErr == kCVReturnSuccess && srcpb != NULL && dstpb != NULL) {
+			
+				if (self->vtPixelTransferSessionRef == NULL) {
+					cvErr = VTPixelTransferSessionCreate(kCFAllocatorDefault, &self->vtPixelTransferSessionRef);
+				}
+				if (self->vtPixelTransferSessionRef != NULL) {
+					cvErr = VTPixelTransferSessionTransferImage(self->vtPixelTransferSessionRef, srcpb, dstpb);
+				}
+			}
+			
+			if (srcpb != NULL) {
+				CVPixelBufferRelease(srcpb);
+				srcpb = NULL;
+			}
+			if (dstpb != NULL) {
+				CVPixelBufferRelease(dstpb);
+				dstpb = NULL;
+			}
+			
+			NSSize fboSize = NSMakeSize(self->fboWidth, self->fboHeight);
+
+			[self->virtCamServer sendFrameWithSize:self->fboYUVBuffer
+				size:fboSize
+				#if VIRTCAM_ROW_BYTES
+				rowbytes:self->fboYUVBufferRowBytes
+				#endif
+				timestamp:mach_absolute_time()
+				fpsNumerator:30000
+				fpsDenominator:1000];
+			
+			#if DEBUG
+			static double lastRender_mS = 0.0;
+			double renderTime = (double) mach_absolute_time() / (double) 1000000.0;
+			NSLog(@"Render Frame at %f mS", renderTime - lastRender_mS);
+			lastRender_mS = renderTime;
+			#endif
+			
+			renderTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 60.0 target:self selector:@selector(renderToVirtualCameraServerFromTimer:) userInfo:NULL repeats:NO];
+		}
+	} else {
+		if (renderTimer != NULL) {
+			[renderTimer invalidate];
+			renderTimer = NULL;
+		}
+	}
+	
+	[renderLock unlock];
 }
 
 // ----------------------------------------------------------------------

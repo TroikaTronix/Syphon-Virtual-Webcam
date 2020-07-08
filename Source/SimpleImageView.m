@@ -465,7 +465,7 @@ void main() {\
 
 #define LogGLError() [self LogGLErrors:__FILE__ line:__LINE__]
 
--(void) RenderCurrentImageIntoFBO:(GLuint) fbo pixelData:(void*)pixelData pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes
+-(void) RenderCurrentImageIntoFBO:(GLuint) fbo fboWidth:(GLint)fboWidth fboHeight:(GLint)fboHeight pixelData:(void*)pixelData pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes
 {
 	SyphonImage *image = self.image;
 
@@ -477,13 +477,15 @@ void main() {\
 	
 	NSSize imageSize = NSMakeSize(0, 0);
 	
-    if (image)
-    {
+	NSSize frameSize;
+	frameSize.width = fboWidth;
+	frameSize.height = fboHeight;
+
+	if (image) {
+	
         imageSize = image.textureSize;
 
  		glViewport(0, 0, imageSize.width, imageSize.height);
-
-       	NSSize frameSize = image.textureSize;
 
         NSSize scaled;
         float wr = imageSize.width / frameSize.width;
@@ -543,12 +545,12 @@ void main() {\
 		
 		memset(pixelData, 0, pixelDataSize);
 		
-		if (pixelDataSize >= imageSize.width * imageSize.height * 4) {
+		if (pixelDataSize >= frameSize.width * frameSize.height * 4) {
 		
 			glPixelStorei(GL_PACK_ROW_LENGTH, pixelDataRowBytes / 4);
 			glPixelStorei(GL_PACK_ALIGNMENT, 1);
 			LogGLError();
-			glReadPixels(0, 0, imageSize.width, imageSize.height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixelData);
+			glReadPixels(0, 0, frameSize.width, frameSize.height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixelData);
 			LogGLError();
 		}
 
