@@ -1,6 +1,8 @@
 Archive
+Notarized
 .DS_Store
 *.psd
+*.dmg
 syphon-virtual-webcam-dropdmg.png
 
 # Created by https://www.toptal.com/developers/gitignore/api/xcode
