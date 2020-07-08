@@ -33,3 +33,16 @@ The Syphon image on the GPU must be pulled back into the CPU as an ARGB bitmap. 
 # Questions?
 
 You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).
+
+# Release History
+
+**v0.9.5**
+Ensured that the **OBS Virtual Camera Is Inactive** screen would not appear when the Syphon source had a very slow frame rate.
+Ensured that "App Nap" was disabled for Syphon Virtual Camera.
+Fixed a bug where a scrambled image would be shown if  the Syphon source width was not divisible by 4.
+Fixed a few small memory leaks.
+Added "Download the Latest Version" to the Help Menu.
+
+**v0.9.4**
+Initial Release
+

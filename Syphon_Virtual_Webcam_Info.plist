@@ -34,5 +34,7 @@
 	<string>NSApplication</string>
 	<key>OBSDownloadURL</key>
 	<string>https://github.com/johnboiles/obs-mac-virtualcam/releases</string>
+	<key>PluginPageURL</key>
+	<string>https://troikatronix.com/plugin/syphon-virtual-webcam/</string>
 </dict>
 </plist>

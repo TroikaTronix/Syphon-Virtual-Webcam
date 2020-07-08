@@ -133,6 +133,8 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	VTPixelTransferSessionRef vtPixelTransferSessionRef;
 	
     IBOutlet NSArrayController *availableServersController;
+    
+    id <NSObject> _appNapPreventer;
 
     NSArray *selectedServerDescriptions;
 
@@ -258,6 +260,10 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
+    NSActivityOptions options = NSActivityUserInitiatedAllowingIdleSystemSleep;
+    NSString* reason = @"Prevent Interruptions to Video Feed";
+    _appNapPreventer = [[NSProcessInfo processInfo] beginActivityWithOptions:options reason:reason];
+
 	NSBundle* bundle = [NSBundle bundleWithPath:@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin"];
 	if (bundle == NULL) {
 		[self downloadAndInstallVirtualCamera:NO];
@@ -307,6 +313,7 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	BOOL mirror = ([((NSButton*) sender) integerValue] != 0);
 	self.view.mirror = mirror;
 	[[NSUserDefaults standardUserDefaults] setObject: [NSNumber numberWithBool:mirror] forKey:MirrorCheckboxKey];
+	[self renderToVirtualCameraServer];
 }
 
 // ----------------------------------------------------------------------
@@ -584,87 +591,91 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 
 - (void)renderToVirtualCameraServer
 {
-	[renderLock lock];
+	@autoreleasepool {
 	
-	if (self->virtCamServer != NULL) {
-	
-		if (renderTimer != NULL) {
-			[renderTimer invalidate];
-			renderTimer = NULL;
-		}
+		[renderLock lock];
 		
-		[self CreateFBO:[syClient context] horz:(GLuint)self.frameWidth vert:(GLuint)self.frameHeight];
+		if (self->virtCamServer != NULL) {
 		
-		if (self->fboRGBBuffer != NULL && self->fboRGBBufferSize > 0 && self->fboYUVBuffer != NULL && self->fboYUVBufferSize > 0) {
+			if (renderTimer != NULL) {
+				[renderTimer invalidate];
+				renderTimer = NULL;
+			}
 			
-			CVReturn cvErr = kCVReturnSuccess;
+			[self CreateFBO:[syClient context] horz:(GLuint)self.frameWidth vert:(GLuint)self.frameHeight];
 			
-			// IOSurfaceRef ioSurface = [self->syClient getIOSurface];
-			// CVPixelBufferRef pixelBuffer;
-			// cvErr = CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, ioSurface, CreateSurfacePixelBufferCreationOptions(ioSurface), &pixelBuffer);
+			if (self->fboRGBBuffer != NULL && self->fboRGBBufferSize > 0 && self->fboYUVBuffer != NULL && self->fboYUVBufferSize > 0) {
+				
+				CVReturn cvErr = kCVReturnSuccess;
+				
+				// IOSurfaceRef ioSurface = [self->syClient getIOSurface];
+				// CVPixelBufferRef pixelBuffer;
+				// cvErr = CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, ioSurface, CreateSurfacePixelBufferCreationOptions(ioSurface), &pixelBuffer);
 
-			CGLContextObj saveCtx = [self pushContex:self->fboContext];
-			[self.view prepareOpenGL];
-			[self.view RenderCurrentImageIntoFBO:self->fbo fboWidth:self->fboWidth fboHeight:self->fboHeight pixelData:self->fboRGBBuffer pixelDataSize:self->fboRGBBufferSize pixelDataRowBytes:self->fboRGBBufferRowBytes];
-			[self popContext:saveCtx];
-			
-			CVPixelBufferRef srcpb = NULL;
-			CVPixelBufferRef dstpb = NULL;
-			
-			if (cvErr == kCVReturnSuccess) {
-				cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_32BGRA, self->fboRGBBuffer, self->fboRGBBufferRowBytes, NULL, NULL, NULL, &srcpb);
-			}
-			if (cvErr == kCVReturnSuccess) {
-				cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_422YpCbCr8, self->fboYUVBuffer, self->fboYUVBufferRowBytes, NULL, NULL, NULL, &dstpb);
-			}
-			
-			if (cvErr == kCVReturnSuccess && srcpb != NULL && dstpb != NULL) {
-			
-				if (self->vtPixelTransferSessionRef == NULL) {
-					cvErr = VTPixelTransferSessionCreate(kCFAllocatorDefault, &self->vtPixelTransferSessionRef);
+				CGLContextObj saveCtx = [self pushContex:self->fboContext];
+				[self.view prepareOpenGL];
+				[self.view RenderCurrentImageIntoFBO:self->fbo fboWidth:self->fboWidth fboHeight:self->fboHeight pixelData:self->fboRGBBuffer pixelDataSize:self->fboRGBBufferSize pixelDataRowBytes:self->fboRGBBufferRowBytes];
+				[self popContext:saveCtx];
+				
+				CVPixelBufferRef srcpb = NULL;
+				CVPixelBufferRef dstpb = NULL;
+				
+				if (cvErr == kCVReturnSuccess) {
+					cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_32BGRA, self->fboRGBBuffer, self->fboRGBBufferRowBytes, NULL, NULL, NULL, &srcpb);
 				}
-				if (self->vtPixelTransferSessionRef != NULL) {
-					cvErr = VTPixelTransferSessionTransferImage(self->vtPixelTransferSessionRef, srcpb, dstpb);
+				if (cvErr == kCVReturnSuccess) {
+					cvErr = CVPixelBufferCreateWithBytes(kCFAllocatorDefault, self->fboWidth, self->fboHeight, kCVPixelFormatType_422YpCbCr8, self->fboYUVBuffer, self->fboYUVBufferRowBytes, NULL, NULL, NULL, &dstpb);
 				}
-			}
-			
-			if (srcpb != NULL) {
-				CVPixelBufferRelease(srcpb);
-				srcpb = NULL;
-			}
-			if (dstpb != NULL) {
-				CVPixelBufferRelease(dstpb);
-				dstpb = NULL;
-			}
-			
-			NSSize fboSize = NSMakeSize(self->fboWidth, self->fboHeight);
+				
+				if (cvErr == kCVReturnSuccess && srcpb != NULL && dstpb != NULL) {
+				
+					if (self->vtPixelTransferSessionRef == NULL) {
+						cvErr = VTPixelTransferSessionCreate(kCFAllocatorDefault, &self->vtPixelTransferSessionRef);
+					}
+					if (self->vtPixelTransferSessionRef != NULL) {
+						cvErr = VTPixelTransferSessionTransferImage(self->vtPixelTransferSessionRef, srcpb, dstpb);
+					}
+				}
+				
+				if (srcpb != NULL) {
+					CVPixelBufferRelease(srcpb);
+					srcpb = NULL;
+				}
+				if (dstpb != NULL) {
+					CVPixelBufferRelease(dstpb);
+					dstpb = NULL;
+				}
+				
+				NSSize fboSize = NSMakeSize(self->fboWidth, self->fboHeight);
 
-			[self->virtCamServer sendFrameWithSize:self->fboYUVBuffer
-				size:fboSize
-				#if VIRTCAM_ROW_BYTES
-				rowbytes:self->fboYUVBufferRowBytes
+				[self->virtCamServer sendFrameWithSize:self->fboYUVBuffer
+					size:fboSize
+					#if VIRTCAM_ROW_BYTES
+					rowbytes:self->fboYUVBufferRowBytes
+					#endif
+					timestamp:mach_absolute_time()
+					fpsNumerator:30000
+					fpsDenominator:1000];
+				
+				#if DEBUG
+				static double lastRender_mS = 0.0;
+				double renderTime = (double) mach_absolute_time() / (double) 1000000.0;
+				NSLog(@"Render Frame at %f mS", renderTime - lastRender_mS);
+				lastRender_mS = renderTime;
 				#endif
-				timestamp:mach_absolute_time()
-				fpsNumerator:30000
-				fpsDenominator:1000];
-			
-			#if DEBUG
-			static double lastRender_mS = 0.0;
-			double renderTime = (double) mach_absolute_time() / (double) 1000000.0;
-			NSLog(@"Render Frame at %f mS", renderTime - lastRender_mS);
-			lastRender_mS = renderTime;
-			#endif
-			
-			renderTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 / 60.0 target:self selector:@selector(renderToVirtualCameraServerFromTimer:) userInfo:NULL repeats:NO];
+				
+				renderTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(renderToVirtualCameraServerFromTimer:) userInfo:NULL repeats:NO];
+			}
+		} else {
+			if (renderTimer != NULL) {
+				[renderTimer invalidate];
+				renderTimer = NULL;
+			}
 		}
-	} else {
-		if (renderTimer != NULL) {
-			[renderTimer invalidate];
-			renderTimer = NULL;
-		}
-	}
+		
+		[renderLock unlock];
 	
-	[renderLock unlock];
+	}
 }
 
 // ----------------------------------------------------------------------
@@ -679,6 +690,9 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	}
 	[syClient stop];
 	syClient = nil;
+
+    [[NSProcessInfo processInfo] endActivity:_appNapPreventer];
+    _appNapPreventer = nil;
 }
 
 #pragma mark Window Sizing
@@ -809,6 +823,17 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 - (IBAction)downloadOBSVirtualCamera:(id)sender
 {
 	[self downloadAndInstallVirtualCamera:YES];
+}
+
+// ----------------------------------------------------------------------
+// showPluginPage
+// ----------------------------------------------------------------------
+
+- (IBAction)showPluginPage:(id)sender
+{
+	NSString* urlString = [[NSBundle mainBundle] objectForInfoDictionaryKey: @"PluginPageURL"];
+	NSURL* url = [NSURL URLWithString:urlString];
+	[[NSWorkspace sharedWorkspace] openURL:url];
 }
 
 // ----------------------------------------------------------------------
