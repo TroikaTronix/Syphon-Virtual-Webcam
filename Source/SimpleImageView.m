@@ -153,26 +153,30 @@ void main() {\
     const GLint on = 1;
     [[self openGLContext] setValues:&on forParameter:NSOpenGLCPSwapInterval];
 
-    GLuint vertShader = [self compileShader:vertex ofType:GL_VERTEX_SHADER];
-    GLuint fragShader = [self compileShader:frag ofType:GL_FRAGMENT_SHADER];
+	if (!_program) {
+	
+		GLuint vertShader = [self compileShader:vertex ofType:GL_VERTEX_SHADER];
+		GLuint fragShader = [self compileShader:frag ofType:GL_FRAGMENT_SHADER];
 
-    if (vertShader && fragShader)
-    {
-        _program = glCreateProgram();
-        glAttachShader(_program, vertShader);
-        glAttachShader(_program, fragShader);
+		if (vertShader && fragShader) {
+		
+			_program = glCreateProgram();
+			
+			glAttachShader(_program, vertShader);
+			glAttachShader(_program, fragShader);
 
-        glDeleteShader(vertShader);
-        glDeleteShader(fragShader);
+			glDeleteShader(vertShader);
+			glDeleteShader(fragShader);
 
-        glLinkProgram(_program);
-        GLint status;
-        glGetProgramiv(_program, GL_LINK_STATUS, &status);
-        if (status == GL_FALSE)
-        {
-            glDeleteProgram(_program);
-            _program = 0;
-        }
+			glLinkProgram(_program);
+			GLint status;
+			glGetProgramiv(_program, GL_LINK_STATUS, &status);
+			
+			if (status == GL_FALSE) {
+				glDeleteProgram(_program);
+				_program = 0;
+			}
+		}
     }
 
     if (_program)
@@ -181,30 +185,43 @@ void main() {\
         GLint tex = glGetUniformLocation(_program, "tex");
         glUniform1i(tex, 0);
 
-        glGenVertexArrays(1, &_vao);
-        glGenBuffers(1, &_vbo);
-
         GLint vertCoord = glGetAttribLocation(_program, "vertCoord");
         GLint texCoord = glGetAttribLocation(_program, "texCoord");
-
-        glBindVertexArray(_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-
-        if (vertCoord != -1 && texCoord != -1)
-        {
-            glEnableVertexAttribArray(vertCoord);
-            glVertexAttribPointer(vertCoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), NULL);
-
-            glEnableVertexAttribArray(texCoord);
-            glVertexAttribPointer(texCoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid *)(2 * sizeof(GLfloat)));
-        }
-        else
-        {
-            self.error = [[self class] openGLError];
-        }
-
         _alpha = glGetUniformLocation(_program, "alpha");
 
+		if ((!_vao || !_vbo) && (vertCoord != -1 && texCoord != -1)) {
+		
+			// delete any existing _vao and create a new one
+			if (_vao != 0) {
+				glDeleteVertexArrays(1, &_vao);
+				_vao = 0;
+			}
+			glGenVertexArrays(1, &_vao);
+
+			// delete any existing _vbo and create a new one
+			if (_vbo != 0) {
+				glDeleteVertexArrays(1, &_vbo);
+				_vbo = 0;
+			}
+			glGenBuffers(1, &_vbo);
+
+			glBindVertexArray(_vao);
+			glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+
+			if (vertCoord != -1 && texCoord != -1)
+			{
+				glEnableVertexAttribArray(vertCoord);
+				glVertexAttribPointer(vertCoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), NULL);
+
+				glEnableVertexAttribArray(texCoord);
+				glVertexAttribPointer(texCoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid *)(2 * sizeof(GLfloat)));
+			}
+			else
+			{
+				self.error = [[self class] openGLError];
+			}
+		}
+		
         glUseProgram(0);
 
         _imageSize = NSZeroSize;
@@ -280,9 +297,9 @@ void main() {\
         };
 
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
+    
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -392,49 +409,52 @@ void main() {\
 
 -(void) renderTexture:(GLuint)textureName textureSize:(NSSize)textureSize inset:(float)inset keepAspect:(BOOL)keepAspect
 {
-	NSSize frameSize = self.renderSize;
+	@autoreleasepool {
 
-	NSSize scaled;
-	float wr = textureSize.width / frameSize.width;
-	float hr = textureSize.height / frameSize.height;
-	float ratio = (hr < wr ? wr : hr);
-	scaled = NSMakeSize(ceilf(textureSize.width / ratio), ceil(textureSize.height / ratio));
+		NSSize frameSize = self.renderSize;
 
-	// When the view is aspect-restrained, these will always be 1.0
-	float width = scaled.width / frameSize.width * inset;
-	float height = scaled.height / frameSize.height * inset;
-	if (!keepAspect) {
-		width = height = 1.0f;
+		NSSize scaled;
+		float wr = textureSize.width / frameSize.width;
+		float hr = textureSize.height / frameSize.height;
+		float ratio = (hr < wr ? wr : hr);
+		scaled = NSMakeSize(ceilf(textureSize.width / ratio), ceil(textureSize.height / ratio));
+
+		// When the view is aspect-restrained, these will always be 1.0
+		float width = scaled.width / frameSize.width * inset;
+		float height = scaled.height / frameSize.height * inset;
+		if (!keepAspect) {
+			width = height = 1.0f;
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+
+		GLfloat vertices[] = {
+			-width, -height,    0.0,                 textureSize.height*2,
+			-width,  height,    0.0,                 0.0,
+			 width, -height,    textureSize.width*2, textureSize.height*2,
+			 width,  height,    textureSize.width*2, 0.0
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glUseProgram(_program);
+		glBindTexture(GL_TEXTURE_RECTANGLE, textureName);
+
+		glBindVertexArray(_vao);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glUniform1f(_alpha, _splashIntensity);
+
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glDisable(GL_BLEND);
+
+		glBindVertexArray(0);
+		glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+		glUseProgram(0);
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-
-	GLfloat vertices[] = {
-		-width, -height,    0.0,                 textureSize.height*2,
-		-width,  height,    0.0,                 0.0,
-		 width, -height,    textureSize.width*2, textureSize.height*2,
-		 width,  height,    textureSize.width*2, 0.0
-	};
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glUseProgram(_program);
-	glBindTexture(GL_TEXTURE_RECTANGLE, textureName);
-
-	glBindVertexArray(_vao);
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	glUniform1f(_alpha, _splashIntensity);
-
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-	glDisable(GL_BLEND);
-
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
-	glUseProgram(0);
 }
 
 -(void) LogGLErrors:(const char*)file line:(int)line
@@ -449,7 +469,7 @@ void main() {\
 
 #define LogGLError() [self LogGLErrors:__FILE__ line:__LINE__]
 
--(void) RenderCurrentImageIntoFBO:(GLuint) fbo pixelData:(void*)pixelData pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes
+-(void) RenderCurrentImageIntoFBO:(GLuint) fbo fboWidth:(GLint)fboWidth fboHeight:(GLint)fboHeight pixelData:(void*)pixelData pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes
 {
 	SyphonImage *image = self.image;
 
@@ -461,13 +481,15 @@ void main() {\
 	
 	NSSize imageSize = NSMakeSize(0, 0);
 	
-    if (image)
-    {
+	NSSize frameSize;
+	frameSize.width = fboWidth;
+	frameSize.height = fboHeight;
+
+	if (image) {
+	
         imageSize = image.textureSize;
 
  		glViewport(0, 0, imageSize.width, imageSize.height);
-
-       	NSSize frameSize = image.textureSize;
 
         NSSize scaled;
         float wr = imageSize.width / frameSize.width;
@@ -527,12 +549,12 @@ void main() {\
 		
 		memset(pixelData, 0, pixelDataSize);
 		
-		if (pixelDataSize >= imageSize.width * imageSize.height * 4) {
+		if (pixelDataSize >= frameSize.width * frameSize.height * 4) {
 		
 			glPixelStorei(GL_PACK_ROW_LENGTH, pixelDataRowBytes / 4);
 			glPixelStorei(GL_PACK_ALIGNMENT, 1);
 			LogGLError();
-			glReadPixels(0, 0, imageSize.width, imageSize.height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixelData);
+			glReadPixels(0, 0, frameSize.width, frameSize.height, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, pixelData);
 			LogGLError();
 		}
 

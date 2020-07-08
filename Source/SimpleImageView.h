@@ -38,5 +38,5 @@
 @property (readonly) NSSize renderSize;
 @property (readwrite) BOOL mirror;
 @property (readonly) NSError *error;
--(void)RenderCurrentImageIntoFBO:(GLuint) fbo pixelData:(void*)pixelData  pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes;
+-(void)RenderCurrentImageIntoFBO:(GLuint) fbo fboWidth:(GLint)fboWidth fboHeight:(GLint)fboHeight pixelData:(void*)pixelData  pixelDataSize:(GLuint)pixelDataSize pixelDataRowBytes:(GLuint)pixelDataRowBytes;
 @end

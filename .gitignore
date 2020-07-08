@@ -1,6 +1,8 @@
 Archive
+Notarized
 .DS_Store
 *.psd
+*.dmg
 syphon-virtual-webcam-dropdmg.png
 
 # Created by https://www.toptal.com/developers/gitignore/api/xcode
@@ -42,3 +44,11 @@ DerivedData/
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # End of https://www.toptal.com/developers/gitignore/api/xcode
+
+*.xcuserstate
+*.xcbkptlist
+*.xcscheme
+
+Syphon Virtual Webcam/
+Syphon Virtual Webcam.xcodeproj/xcuserdata/mconiglio.xcuserdatad/xcschemes/Syphon Virtual Webcam.xcscheme
+Syphon Virtual Webcam.xcodeproj/project.xcworkspace/xcuserdata/mconiglio.xcuserdatad/UserInterfaceState.xcuserstate
