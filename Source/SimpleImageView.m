@@ -65,6 +65,7 @@ void main() {\
     NSDate* _timerStart;
     NSTimer* _timer;
     double _splashIntensity;
+    BOOL _splashDirty;
 }
 
 + (NSError *)openGLError
@@ -105,29 +106,6 @@ void main() {\
 	_splashIntensity = 1.0;
 	_timerStart = [NSDate dateWithTimeIntervalSinceNow:0.0];
 	_timer = [NSTimer scheduledTimerWithTimeInterval:1.0/30.0 target:self selector:@selector(timerFired:) userInfo:NULL repeats:YES];
-
-	#if 0
-	_timer = [NSTimer scheduledTimerWithTimeInterval:1.0/30.0 repeats:YES block:^(NSTimer *timer) {
-		NSTimeInterval secs = [[NSDate dateWithTimeIntervalSinceNow:0.0] timeIntervalSinceDate:self->_timerStart];
-		double min = 3.0;
-		double max = min + 0.5;
-		if (secs < min) {
-			self->_splashIntensity = 1.0;
-			[self setNeedsDisplay:YES];
-		} else if (secs < max) {
-			self->_splashIntensity = 1.0 - (secs - min) / (max - min);
-			[self setNeedsDisplay:YES];
-			#if DEBUG
-			NSLog(@"Fading Out Splash");
-			#endif
-		} else {
-			self->_splashIntensity = 0.0;
-			[self->_timer invalidate];
-			self->_timer = NULL;
-			[self setNeedsDisplay:YES];
-		}
-	}];
-	#endif
 }
 
 - (void)dealloc
@@ -149,7 +127,7 @@ void main() {\
 - (void) timerFired:(NSTimer *)timer
 {
 	NSTimeInterval secs = [[NSDate dateWithTimeIntervalSinceNow:0.0] timeIntervalSinceDate:self->_timerStart];
-	double min = 1.5;
+	double min = 2.0;
 	double max = min + 0.5;
 	if (secs < min) {
 		self->_splashIntensity = 1.0;
@@ -270,6 +248,11 @@ void main() {\
 
         self.needsReshape = NO;
     }
+    
+    if (_splashDirty) {
+		changed = true;
+		_splashDirty = NO;
+	}
 
     if (image && changed)
     {
@@ -321,6 +304,7 @@ void main() {\
 	
 	if (_splashIntensity > 0.0) {
    		[self drawSplashImage];
+   		_splashDirty = YES;
    	}
 	
     [[self openGLContext] flushBuffer];
