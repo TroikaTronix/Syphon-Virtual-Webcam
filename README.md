@@ -44,5 +44,5 @@ You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.
 * Added "Download the Latest Version" to the Help Menu.
 
 **v0.9.4**
-Initial Release
+* Initial Release
 
