@@ -30,6 +30,24 @@ Clone or download this respository, open the XCode project in XCode 11 or later,
 
 The Syphon image on the GPU must be pulled back into the CPU as an ARGB bitmap. Then it must be converted to YUV so that it can be passed on to OBS Virtual Camera. Neither of these two processes are optimized, so this app is currently CPU hungry. If there is enough interest, we will put more effort into optimizing these two operations.
 
+# Not Working with Zoom?
+
+Some users reported that Syphon Virtual Webcam did not work with Zoom. The following procedure seemed to solve the problem for them.
+
+1.	Quit all applications.
+2.	In Finder, choose Go > Go to Folder... In the dialog that appears, enter /Library/CoreMediaIO/Plug-Ins/DAL/ and click "Go"
+3.	In the folder that appears, delete obs-mac-virtualcam.plugin and then empty the trash
+4.	Delete Zoom from the Applications folder
+5.	Ensure that in the Apple System Preferences, Security & Privacy > General > Allow Apps Downloaded From says "App Store and Identified Developers"
+6.	Install Zoom (Version 5.1.2 or later)
+7.	Run Syphon Virtual Webcam -- it should automatically ask you to install the OBS Virtual Camera driver. (If it doesn't do this automatically, try choosing Help > Install OBS Virtual Camera Plugin instead.) Follow the instructions to download and install the OBS Virtual Camera Plugin.
+8.	Reboot your computer
+9.	Open QuickTime Player and choose New Movie Recording.
+10.	Click the little triangle near the record button to show the available video input devices. If you see OBS Virtual Camera, select it. (If not, then something has gone wrong.)
+11.	After selecting OBS Virtual Camera in the popup, you should see the OBS Virtual Camera test pattern.
+12.	If that succeeds, open Zoom and try to select OBS Virtual Camera as the video input.
+13.	If that succeeds, run Syphon Virtual Webcam and feed it a Syphon video stream. You should be good to go.
+
 # Questions?
 
 You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).
