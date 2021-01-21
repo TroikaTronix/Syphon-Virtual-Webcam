@@ -5,7 +5,8 @@
 #define OBS_VIRTUAL_CAMERA_COMPATIBLE	1
 
 #if OBS_VIRTUAL_CAMERA_COMPATIBLE
-	#define kVirtCamMachPortName		"com.johnboiles.obs-mac-virtualcam.server"
+	#define kVirtCamMachPortNameOrig	"com.johnboiles.obs-mac-virtualcam.server"
+	#define kVirtCamMachPortNameOBSv26	"com.obsproject.obs-mac-virtualcam.server"
 	#define VIRTCAM_ROW_BYTES			0
 	#define VIRTCAM_FRAME_COMPONENTS	6
 #else
@@ -22,6 +23,7 @@ typedef enum
 	kVirtCam_Disconnect	= 3,
 } VirtCamMessages;
 
+extern bool gIsRunningOBSVirtCam;
 
 #define vc_log_info(...)	printf(__VA_ARGS__)
 #define vc_log_error(...)	printf(__VA_ARGS__)

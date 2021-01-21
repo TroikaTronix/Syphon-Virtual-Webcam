@@ -1,8 +1,12 @@
 # About Syphon Virtual Webcam
 
-This free app, created for you by [TroikaTronix/Isadora](https://troikatronix.com), allows you to send a Syphon video stream to a compatible application that supports video input from a webcam. It works with the excellent virtual webcam driver [OBS Virtual Camera for macOS](https://github.com/johnboiles/obs-mac-virtualcam/releases) implemented by John Boiles.
+This free app, created for you by [TroikaTronix/Isadora](https://troikatronix.com), allows you to send a Syphon video stream to a compatible application that supports video input from a webcam.  It relies on the Open Broadcasting System (OBS) Virtual Webcam driver first implemented by John Boiles.
 
-Syphon Virtual Camera will guide you through the process of downloading and installing the OBS Virtual Camera driver. You can download and install the latest version at any time by choosing **Help > Install OBS Virtual Webcam** from the main menu. 
+If you have installed OBS v26.1 or later, you can install the latest OBS Virtual Webcam driver by opening OBS and choosing **Tools > Start Virtual Webcam**. Please note that you cannot use Syphon Virtual Webcam while OBS's virtual webcam output is running, i.e., after choosing **Tools > Start Virtual Webcam**; trying to do this may lead to unpredictable results including crashes.
+
+If you have not installed OBS (or have installed a version of OBS before v26.1) then Syphon Virtual Camera will guide you through the process of downloading and installing the standalone OBS Virtual Webcam driver from [John Boiles' GitHub Repository](https://github.com/johnboiles/obs-mac-virtualcam).
+
+The latest version of Syphon Virtual Webcam can be found in the [plugins](https://troikatronix.com/plugin/syphon-virtual-webcam/) section of the TroikaTronix website.
 
 # Download
 
@@ -53,6 +57,9 @@ Some users reported that Syphon Virtual Webcam did not work with Zoom. The follo
 You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).
 
 # Release History
+
+**v0.9.6**
+Updated Syphon Virtual Webcam to work with either the OBS 26.1 Virtual Webcam driver or the original driver archived on [GitHub](https://github.com/johnboiles/obs-mac-virtualcam).
 
 **v0.9.5**
 * Ensured that the **OBS Virtual Camera Is Inactive** screen would not appear when the Syphon source had a very slow frame rate.

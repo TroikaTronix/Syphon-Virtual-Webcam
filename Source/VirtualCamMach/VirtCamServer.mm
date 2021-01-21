@@ -5,12 +5,15 @@
 #import <Foundation/Foundation.h>
 #import "VirtCamServer.h"
 
+bool gIsRunningOBSVirtCam = false;
+
 // ---------------------------------------------------------------------------------
 //	VirtCamServer : INTERFACE
 // ---------------------------------------------------------------------------------
 
 @interface VirtCamServer () <NSPortDelegate>
 	@property NSPort*			mPort;
+	@property NSString*			mPortName;
 	@property NSMutableSet*		mClientPorts;
 	@property NSRunLoop*		mRunLoop;
 @end
@@ -52,19 +55,23 @@
 //	startVirtCamServer
 // ---------------------------------------------------------------------------------
 
-- (void) startVirtCamServer
+- (void) startVirtCamServerWithName:(const char*)serverName
 {
-	vc_log_info("VirtCamServer: **** ATTEMPT START for %s ***\n", kVirtCamMachPortName);
+	vc_log_info("VirtCamServer: **** ATTEMPT START for %s ***\n", serverName);
 	
 	// if the port has not yet been created
     if (self.mPort == NULL) {
 
+		NSString* portName = [NSString stringWithUTF8String:serverName];
+		
 		// attempt to create mach port with virtual camera name
-		self.mPort = [[NSMachBootstrapServer sharedInstance] servicePortWithName:@kVirtCamMachPortName];
+		self.mPort = [[NSMachBootstrapServer sharedInstance] servicePortWithName:portName];
 		
 		// if the port was created
 		if (self.mPort != NULL) {
 		
+			self.mPortName = portName;
+			
 		   	#if !__has_feature(objc_arc)
 			[self.mPort retain];
 			#endif
@@ -77,17 +84,32 @@
 			// and start running the loop
 			[self.mRunLoop addPort:self.mPort forMode:NSDefaultRunLoopMode];
 
-			vc_log_info("VirtCamServer: **** SERVER STARTED for %s ***\n", kVirtCamMachPortName);
+			vc_log_info("VirtCamServer: **** SERVER STARTED for %s ***\n", serverName);
 
 		} else {
-			vc_log_error("VirtCamServer: NSMachBootstrapServer Failed to Create Port for %s!\n", kVirtCamMachPortName);
+			vc_log_error("VirtCamServer: NSMachBootstrapServer Failed to Create Port for %s!\n", serverName);
 			return;
 		}
 
     } else {
-        vc_log_info("VirtCamServer: Server for %s already exists.... exiting\n", kVirtCamMachPortName);
+        vc_log_info("VirtCamServer: Server for %s already exists.... exiting\n", serverName);
         return;
     }
+}
+
+// ---------------------------------------------------------------------------------
+//	startVirtCamServer
+// ---------------------------------------------------------------------------------
+
+- (void) startVirtCamServer
+{
+	if (self.mPort == NULL) {
+		if (gIsRunningOBSVirtCam) {
+			[self startVirtCamServerWithName:kVirtCamMachPortNameOBSv26];
+		} else {
+			[self startVirtCamServerWithName:kVirtCamMachPortNameOrig];
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------------
@@ -96,7 +118,7 @@
 
 - (void)stopVirtCamServer
 {
-	vc_log_info("VirtCamServer: **** ATTEMPT STOP *** for %s\n", kVirtCamMachPortName);
+	vc_log_info("VirtCamServer: **** ATTEMPT STOP *** for %s\n", [self.mPortName UTF8String]);
 	
 	vc_log_info("VirtCamServer: Sending kVirtCam_Disconnect (%lu clients)\n", self.mClientPorts.count);
 	[self sendMessageToAllClients:kVirtCam_Disconnect components:NULL];

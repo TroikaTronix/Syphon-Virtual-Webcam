@@ -267,8 +267,13 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	NSBundle* bundle = [NSBundle bundleWithPath:@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin"];
 	if (bundle == NULL) {
 		[self downloadAndInstallVirtualCamera:NO];
+	} else {
+		if ([self isOBSVirtualWebcamInstalled]) {
+			extern bool gIsRunningOBSVirtCam;
+			gIsRunningOBSVirtCam = true;
+		}
 	}
-	
+
     // We use an NSArrayController to populate the menu of available servers
     // Here we bind its content to SyphonServerDirectory's servers array
     [availableServersController bind:@"contentArray" toObject:[SyphonServerDirectory sharedDirectory] withKeyPath:@"servers" options:nil];
@@ -953,6 +958,47 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 }
 
 // ----------------------------------------------------------------------
+// getOBSVirtualWebcamVersionNumber
+// ----------------------------------------------------------------------
+- (NSString*) getOBSVirtualWebcamVersionNumber
+{
+	NSString* version = NULL;
+	
+	NSBundle* bundle = [NSBundle bundleWithPath:@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin"];
+	if (bundle != NULL) {
+		NSDictionary* info = [bundle infoDictionary];
+		if (info != NULL) {
+			version = [info objectForKey:@"CFBundleShortVersionString"];
+		}
+	}
+	
+	return version;
+}
+
+// ----------------------------------------------------------------------
+// isOBSVirtualWebcamInstalled
+// ----------------------------------------------------------------------
+- (BOOL) isOBSVirtualWebcamInstalled
+{
+	BOOL obsVirtualWebCamInstalled = NO;
+	
+	NSString* version = [self getOBSVirtualWebcamVersionNumber];
+	if (version != NULL) {
+		NSArray* values = [version componentsSeparatedByString: @"."];
+		if (values != NULL
+		&& [values objectAtIndex:0] != NULL) {
+			const char* majorVersionStr = [[values objectAtIndex:0] UTF8String];
+			int majorVersion = atoi(majorVersionStr);
+			if (majorVersion >= 26) {
+				obsVirtualWebCamInstalled = YES;
+			}
+		}
+	}
+	
+	return obsVirtualWebCamInstalled;
+}
+
+// ----------------------------------------------------------------------
 // downloadAndInstallVirtualCamera
 // ----------------------------------------------------------------------
 
@@ -979,6 +1025,23 @@ CFDictionaryRef CreateSurfacePixelBufferCreationOptions(IOSurfaceRef surface)
 	NSString* continueText = [@"CONTINUE_BUTTON" localized];
 	NSString* goToDownloadsButton = [@"GO_TO_DOWNLOADS_BUTTON" localized];
 
+	if ([self isOBSVirtualWebcamInstalled]) {
+		NSString* noNeedToDownload1 = [@"NO_NEED_TO_DOWNLAD_1" localized];
+		NSString* obsVirtCamVesrion = [self getOBSVirtualWebcamVersionNumber];
+		NSString* noNeedToDownload2 = [@"NO_NEED_TO_DOWNLAD_2" localized];
+		NSString* infoText = [@"NO_NEED_TO_DOWNLAD_3" localized];
+		NSString* msg = [NSString stringWithFormat:@"%@%@%@", noNeedToDownload1, obsVirtCamVesrion, noNeedToDownload2];
+		NSAlert* alert = [[NSAlert alloc] init] ;
+		[alert addButtonWithTitle:okText];
+		[alert setMessageText: msg];
+		[alert setInformativeText:infoText];
+		[alert setAlertStyle:NSAlertStyleInformational];
+		response = [alert runModal];
+		alert = NULL;
+		foundMostRecentVersion = true;
+		return;
+	}
+	
 	if (pluginURLString != NULL && pluginVersion != NULL) {
 		NSAlert* alert = [[NSAlert alloc] init] ;
 		[alert addButtonWithTitle:downloadText];

@@ -18,3 +18,8 @@
 /* DOWNLOAD ALERT #3 */
 "DOWNLOAD_ALERT_3_MESSAGE" = "Installation of OBS Virtual Webcam is complete. Quit and restart Syphon Virtual Webcam.";
 "DOWNLOAD_ALERT_3_INFO" = "(You only need to do this process the first time you run Syphon Virtual Webcam.)";
+
+/* NO NEED TO DOWNLOAD ALERT */
+"NO_NEED_TO_DOWNLAD_1" = "OBS has already installed v";
+"NO_NEED_TO_DOWNLAD_2" = " of the the OBS Virtual Webcam driver.";
+"NO_NEED_TO_DOWNLAD_3" = "(If you wish to update this driver, please install the latest version of OBS.)";

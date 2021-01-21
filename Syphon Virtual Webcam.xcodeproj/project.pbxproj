@@ -331,7 +331,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.9.5;
+				CURRENT_PROJECT_VERSION = 0.9.6;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -347,7 +347,7 @@
 				INFOPLIST_FILE = Syphon_Virtual_Webcam_Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 0.9.5;
+				MARKETING_VERSION = 0.9.6;
 				OTHER_CODE_SIGN_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.troikatronix.syphon-virtual-webcam";
 				PRODUCT_NAME = "Syphon Virtual Webcam";
@@ -361,9 +361,9 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = "$(PROJECT_DIR)/Source/Syphon Virtual Webcam.entitlements";
-				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_IDENTITY = "Developer ID Application: Mark Coniglio (Q5V96MD6S6)";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 0.9.5;
+				CURRENT_PROJECT_VERSION = 0.9.6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q5V96MD6S6;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -378,7 +378,7 @@
 				INFOPLIST_FILE = Syphon_Virtual_Webcam_Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MARKETING_VERSION = 0.9.5;
+				MARKETING_VERSION = 0.9.6;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.troikatronix.syphon-virtual-webcam";
 				PRODUCT_NAME = "Syphon Virtual Webcam";
