@@ -52,6 +52,29 @@ Some users reported that Syphon Virtual Webcam did not work with Zoom. The follo
 12.	If that succeeds, open **Zoom** and try to select **OBS Virtual Camera** as the video input.
 13.	If that succeeds, run **Syphon Virtual Webcam** and feed it a Syphon video stream. You should be good to go.
 
+# Frequently Asked Questions
+
+**Q: How can I completely uninstall the Syphon Virtual Webcam and the OBS Virtual Webcam driver?**
+
+Follow these steps:
+
+1. Go to the **Applications** folder and drag **Syphon Virtual Webcam** to the Trash.
+1. In the Finder choose **Go > Go To Folder**, enter `/Library/CoreMediaIO/Plug-Ins/DAL/`, and click OK.
+1. Drag file **obs-mac-virtualcam.plugin** to the Trash.
+1. If asked, enter your password to confirm deletion.
+1. Restart your computer.
+
+**Q: How can I check what version of OBS Virtual Webcam driver is being used?**
+
+Follow these steps:
+
+1. In the Finder choose **Go > Go To Folder**, enter `/Library/CoreMediaIO/Plug-Ins/DAL/`, and click OK.
+1. Select the file **obs-mac-virtualcam.plugin**.
+1. Choose File > Get Info.
+1. Look for the version number in the top section of the Window.
+
+If the version number is 26.1 or greater, then this driver was installed by the latest version of OBS. If the version number its 1.3.1, then the driver is the version downloaded from John Boiles' GitHub Repository.
+
 # Questions?
 
 You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).

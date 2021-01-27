@@ -32,6 +32,13 @@
 
 - (void) awakeFromNib
 {
+	CGFloat width = 600;
+	CGFloat height = 680;
+	CGFloat margin = 20.0f;
+	
+    [[self window] setContentSize:NSMakeSize(width, height)];
+	[self setFrameSize:NSMakeSize(width-margin*2, height-margin*2)];
+	
 	NSURL* url = [[NSBundle mainBundle] URLForResource:@"Welcome" withExtension:@"rtf"];
 	NSError* err = NULL;
 	NSDictionary* options = @{ NSDocumentTypeDocumentAttribute : NSRTFTextDocumentType};
