@@ -75,7 +75,7 @@ Follow these steps:
 
 If the version number is 26.1 or greater, then this driver was installed by the latest version of OBS. If the version number its 1.3.1, then the driver is the version downloaded from John Boiles' GitHub Repository.
 
-# Questions?
+# More Questions?
 
 You can ask for help on the [TroikaTronix Forum](https://community.troikatronix.com/topic/6742).
 
