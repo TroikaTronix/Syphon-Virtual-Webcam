@@ -1,5 +1,7 @@
 # About Syphon Virtual Webcam
 
+Note: This project is no longer compatible with modern versions of macOS due to additional operating-system security restrictions. It is no longer maintained or supported.
+
 This free app, created for you by [TroikaTronix/Isadora](https://troikatronix.com), allows you to send a Syphon video stream to a compatible application that supports video input from a webcam.  It relies on the Open Broadcasting System (OBS) Virtual Webcam driver first implemented by John Boiles.
 
 If you have installed OBS v26.1 or later, you can install the latest OBS Virtual Webcam driver by opening OBS and choosing **Tools > Start Virtual Webcam**. Please note that you cannot use Syphon Virtual Webcam while OBS's virtual webcam output is running, i.e., after choosing **Tools > Start Virtual Webcam**; trying to do this may lead to unpredictable results including crashes.
