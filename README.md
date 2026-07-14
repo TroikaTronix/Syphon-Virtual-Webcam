@@ -1,6 +1,6 @@
 # About Syphon Virtual Webcam
 
-> **Warning:** This project is no longer compatible with macOS Sonoma (v14.x) or later due to additional operating-system security restrictions. It is therefore no longer maintained or supported.
+> [!WARNING] > This project is no longer compatible with macOS Sonoma (v14.x) or later due to additional operating-system security restrictions. It is therefore no longer maintained or supported.
 
 This free app, created for you by [TroikaTronix/Isadora](https://troikatronix.com), allows you to send a Syphon video stream to a compatible application that supports video input from a webcam.  It relies on the Open Broadcasting System (OBS) Virtual Webcam driver first implemented by John Boiles.
 
